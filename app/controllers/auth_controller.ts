@@ -25,6 +25,8 @@ export default class AuthController {
     response.status(201).send(newUser)
   }
   
+
+  
   async login({response,request}: HttpContext) {
 
     const { email, password } = request.only(['email', 'password'])
