@@ -37,7 +37,31 @@ export default class AccountsController {
   /**
    * Handle form submission for the edit action
    */
-  async update({ params, request }: HttpContext) {}
+  async update({ params, request, response, auth }: HttpContext) {
+
+    const {name} = request.body()
+    const id = params.id
+    const user_id = auth.user?.id;
+
+    if(!name){
+      return response.status(400).send({error: 'Bad request'})
+    }
+   
+    const account = await Account.find(id)
+    if(!account){
+      return response.status(404).send({error: 'Resource not found'})
+    }
+
+    if(account.user_id != user_id){
+      return response.status(403).send({error: 'Access denied'})
+    }
+    
+    account.name = name
+    account.save()
+    return response.status(200).send(account)
+   
+
+  }
 
   /**
    * Delete record

@@ -24,6 +24,8 @@ router.post('auth/login', [AuthController, 'login'])
 // Accounts Routes
 router.get('accounts', [AccountsController, 'index']).use(middleware.auth({guards: ['api']}))
 router.post('accounts', [AccountsController, 'store']).use(middleware.auth({guards: ['api']}))
+router.put('accounts/:id', [AccountsController, 'update']).use(middleware.auth({guards: ['api']}))
 // Categories Routes
 router.get('categories', [CategoriesController, 'index']).use(middleware.auth({guards: ['api']}))
 router.post('categories', [CategoriesController, 'store']).use(middleware.auth({guards: ['api']}))
+router.put('categories/:id', [CategoriesController, 'update']).use(middleware.auth({guards: ['api']}))

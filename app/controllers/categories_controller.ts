@@ -36,7 +36,30 @@ export default class CategoriesController {
   /**
    * Handle form submission for the edit action
    */
-  async update({ params, request }: HttpContext) {}
+  async update({ params, request, response, auth }: HttpContext) {
+
+    const {name} = request.body()
+        const id = params.id
+        const user_id = auth.user?.id;
+    
+        if(!name){
+          return response.status(400).send({error: 'Bad request'})
+        }
+       
+        const category = await Category.find(id)
+        if(!category){
+          return response.status(404).send({error: 'Resource not found'})
+        }
+    
+        if(category.user_id != user_id){
+          return response.status(403).send({error: 'Access denied'})
+        }
+        
+        category.name = name
+        category.save()
+        return response.status(200).send(category)
+
+  }
 
   /**
    * Delete record
