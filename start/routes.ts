@@ -12,6 +12,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import AccountsController from '#controllers/accounts_controller'
 import CategoriesController from '#controllers/categories_controller'
+import TransactionsController from '#controllers/transactions_controller'
 
 router.get('/', async () => {
   return {
@@ -31,3 +32,8 @@ router.get('categories', [CategoriesController, 'index']).use(middleware.auth({g
 router.post('categories', [CategoriesController, 'store']).use(middleware.auth({guards: ['api']}))
 router.put('categories/:id', [CategoriesController, 'update']).use(middleware.auth({guards: ['api']}))
 router.delete('categories/:id', [CategoriesController, 'destroy']).use(middleware.auth({guards: ['api']}))
+// Transactions Routes
+router.get('transactions', [TransactionsController, 'index']).use(middleware.auth({guards: ['api']}))
+router.post('transactions', [TransactionsController, 'store']).use(middleware.auth({guards: ['api']}))
+router.put('transactions/:id', [TransactionsController, 'update']).use(middleware.auth({guards: ['api']}))
+router.delete('transactions/:id', [TransactionsController, 'destroy']).use(middleware.auth({guards: ['api']}))
