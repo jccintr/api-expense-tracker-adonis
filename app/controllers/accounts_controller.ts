@@ -57,7 +57,7 @@ export default class AccountsController {
     }
     
     account.name = name
-    account.save()
+    await account.save()
     return response.status(200).send(account)
    
 
@@ -66,5 +66,24 @@ export default class AccountsController {
   /**
    * Delete record
    */
-  async destroy({ params }: HttpContext) {}
+  async destroy({ params, response, auth }: HttpContext) {
+
+    const id = params.id
+    const user_id = auth.user?.id;
+
+     
+    const account = await Account.find(id)
+    if(!account){
+      return response.status(404).send({error: 'Resource not found'})
+    }
+
+    if(account.user_id != user_id){
+      return response.status(403).send({error: 'Access denied'})
+    }
+    
+    
+    await account.delete()
+    return response.status(200).send({message:'Resource deleted'})
+
+  }
 }

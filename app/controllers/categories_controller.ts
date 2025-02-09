@@ -56,7 +56,7 @@ export default class CategoriesController {
         }
         
         category.name = name
-        category.save()
+        await category.save()
         return response.status(200).send(category)
 
   }
@@ -64,5 +64,24 @@ export default class CategoriesController {
   /**
    * Delete record
    */
-  async destroy({ params }: HttpContext) {}
+  async destroy({ params, response, auth }: HttpContext) {
+
+    const id = params.id
+    const user_id = auth.user?.id;
+
+    const category = await Category.find(id)
+    if(!category){
+      return response.status(404).send({error: 'Resource not found'})
+    }
+
+    if(category.user_id != user_id){
+      return response.status(403).send({error: 'Access denied'})
+    }
+    
+  
+    await category.delete()
+    return response.status(200).send({message:'Resource deleted'})
+
+
+  }
 }
