@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Category from '#models/category'
+import { createAccountValidator } from '#validators/account';
 
 export default class CategoriesController {
   /**
@@ -18,7 +19,8 @@ export default class CategoriesController {
    */
  async store({ response, request, auth }: HttpContext) {
  
-    
+     const data = request.all()
+     await createAccountValidator.validate(data)
      const {name} = request.body()
      const user_id = auth.user?.id;
      
@@ -38,13 +40,13 @@ export default class CategoriesController {
    */
   async update({ params, request, response, auth }: HttpContext) {
 
+    const data = request.all()
+    await createAccountValidator.validate(data)
     const {name} = request.body()
         const id = params.id
         const user_id = auth.user?.id;
     
-        if(!name){
-          return response.status(400).send({error: 'Bad request'})
-        }
+       
        
         const category = await Category.find(id)
         if(!category){

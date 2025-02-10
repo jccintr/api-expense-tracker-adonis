@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Account from '#models/account'
+import { createAccountValidator } from '#validators/account';
 
 
 export default class AccountsController {
@@ -19,7 +20,8 @@ export default class AccountsController {
    */
   async store({ response, request, auth }: HttpContext) {
 
-   
+    const data = request.all()
+    await createAccountValidator.validate(data)
     const {name} = request.body()
     const user_id = auth.user?.id;
     
@@ -39,13 +41,13 @@ export default class AccountsController {
    */
   async update({ params, request, response, auth }: HttpContext) {
 
+    const data = request.all()
+    await createAccountValidator.validate(data)
     const {name} = request.body()
     const id = params.id
     const user_id = auth.user?.id;
 
-    if(!name){
-      return response.status(400).send({error: 'Bad request'})
-    }
+   
    
     const account = await Account.find(id)
     if(!account){
