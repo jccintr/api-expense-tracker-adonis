@@ -39,7 +39,22 @@ export default class TransactionsController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params,response,auth }: HttpContext) {
+
+    const id = params.id
+    const user_id = auth.user?.id;
+
+    const transaction = await Transaction.find(id)
+    if(!transaction){
+      return response.status(404).send({error: 'Resource not found'})
+    }
+
+    if(transaction.user_id != user_id){
+      return response.status(403).send({error: 'Access denied'})
+    }
+
+    return response.status(200).send(transaction)
+  }
 
   /**
    * Handle form submission for the edit action
