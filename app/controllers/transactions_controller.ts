@@ -1,5 +1,6 @@
 import Transaction from '#models/transaction';
 import type { HttpContext } from '@adonisjs/core/http'
+import { createTransactionValidator } from '#validators/transaction';
 
 export default class TransactionsController {
   /**
@@ -18,20 +19,14 @@ export default class TransactionsController {
    */
   async store({ request,response,auth }: HttpContext) {
 
+        const data = request.all()
+        await createTransactionValidator.validate(data)
+       
+
          const {description,amount,category_id,account_id} = request.body()
          const user_id = auth.user?.id;
-
-         if(!description || !amount || !category_id || !account_id){
-          return response.status(400).send({error: 'Bad request'})
-    }
-
-    if(amount <=0){
-      return response.status(400).send({error: 'Field amount must be greater than zero'})
-   }
-         
-         
          const newTransaction = await Transaction.create({description,amount,category_id,account_id,user_id})
-           
+        
          return response.status(201).send(newTransaction)
 
   }
@@ -60,6 +55,9 @@ export default class TransactionsController {
    * Handle form submission for the edit action
    */
   async update({ params,request,response,auth }: HttpContext) {
+
+    const data = request.all()
+    await createTransactionValidator.validate(data)
 
     const {description,amount,category_id,account_id} = request.body()
     const id = params.id
