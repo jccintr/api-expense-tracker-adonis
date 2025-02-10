@@ -8,9 +8,26 @@ export default class TransactionsController {
    */
   async index({response,auth}: HttpContext) {
 
-    const user_id = auth.user?.id;
-    const transactions = await  Transaction.findManyBy('user_id', user_id)
-    return response.status(200).send(transactions)
+    const user_id = auth.user?.id!;
+    // carregamento eager não está funcionando
+   // const transactions = await Transaction.query().where('user_id', user_id).preload('account').preload('category');
+   const transactions = await  Transaction.findManyBy('user_id', user_id)
+
+    var trans: Transaction[] = []
+  /*
+    transactions.forEach(async t => {
+      newT : Transaction = await t.load('account')
+      trans.push(newT)
+    });
+*/
+    for(let i=0;i<transactions.length;i++){
+        const t =  transactions[0]
+        await t.load('account')
+        await t.load('category')
+        trans.push(t);
+    }
+  
+    return response.status(200).send(trans)
 
   }
 
@@ -47,7 +64,9 @@ export default class TransactionsController {
     if(transaction.user_id != user_id){
       return response.status(403).send({error: 'Access denied'})
     }
-
+    
+    await transaction.load('account')
+    await transaction.load('category')
     return response.status(200).send(transaction)
   }
 
