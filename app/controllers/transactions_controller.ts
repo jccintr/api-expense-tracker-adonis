@@ -21,7 +21,7 @@ export default class TransactionsController {
     });
 */
     for(let i=0;i<transactions.length;i++){
-        const t =  transactions[0]
+        const t =  transactions[i]
         await t.load('account')
         await t.load('category')
         trans.push(t);
