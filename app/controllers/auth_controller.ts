@@ -1,10 +1,14 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
 import hash from '@adonisjs/core/services/hash'
+import { registerValidator } from '#validators/auth';
 
 export default class AuthController {
   
   async register({response,request}: HttpContext) {
+
+     const data = request.all()
+     await registerValidator.validate(data)
 
     const {name,email,password} = request.body();
 
@@ -12,7 +16,7 @@ export default class AuthController {
     const user = await User.findBy('email', email)
 
     if (user) {
-        return response.status(400).send({error:'Email já cadastrado.'})
+        return response.status(409).send({error:'Email já cadastrado.'})
     }
 
     const newUser = new User()
