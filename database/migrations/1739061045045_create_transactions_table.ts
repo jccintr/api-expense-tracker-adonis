@@ -13,8 +13,8 @@ export default class extends BaseSchema {
       table.bigInteger('user_id')
       table.timestamp('created_at')
       table.timestamp('updated_at')
-      table.foreign('category_id').references('users.id')
-      table.foreign('account_id').references('users.id')
+      table.foreign('category_id').references('categories.id')
+      table.foreign('account_id').references('accounts.id')
       table.foreign('user_id').references('users.id')
     })
   }

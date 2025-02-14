@@ -6,20 +6,22 @@ export default class TransactionsController {
   /**
    * Display a list of resource
    */
-  async index({response,auth}: HttpContext) {
+  async index({response,auth,request}: HttpContext) {
 
     const user_id = auth.user?.id!;
-    // carregamento eager não está funcionando
-   // const transactions = await Transaction.query().where('user_id', user_id).preload('account').preload('category');
-   const transactions = await  Transaction.findManyBy('user_id', user_id)
+    const {data} = request.qs();
 
+    if(data){
+      const minDate = new Date(data+'T00:00:00.000Z');
+      const maxDate = new Date(data+'T23:59:00.000Z');
+      var transactions = await Transaction.query().where('user_id', user_id).whereBetween('createdAt',[minDate, maxDate]);
+    } else {
+      var transactions = await  Transaction.findManyBy({user_id: user_id})
+    }
+ 
+   
     var trans: Transaction[] = []
-  /*
-    transactions.forEach(async t => {
-      newT : Transaction = await t.load('account')
-      trans.push(newT)
-    });
-*/
+ 
     for(let i=0;i<transactions.length;i++){
         const t =  transactions[i]
         await t.load('account')
