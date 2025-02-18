@@ -83,9 +83,16 @@ export default class AccountsController {
       return response.status(403).send({error: 'Access denied'})
     }
     
-    
-    await account.delete()
-    return response.status(200).send({message:'Resource deleted'})
+    try {
+      
+      await account.delete()
+      return response.status(200).send({message:'Resource deleted'})
+
+    } catch (error) {
+
+      return response.status(409).send({error:'Cannot delete this resource because it is being referenced in another table.'})
+    }
+   
 
   }
 }
