@@ -35,6 +35,7 @@ router.put('categories/:id', [CategoriesController, 'update']).use(middleware.au
 router.delete('categories/:id', [CategoriesController, 'destroy']).use(middleware.auth({guards: ['api']}))
 // Transactions Routes
 router.get('transactions', [TransactionsController, 'index']).use(middleware.auth({guards: ['api']}))
+router.get('transactions/search', [TransactionsController, 'search']).use(middleware.auth({guards: ['api']}))
 router.get('transactions/:id', [TransactionsController, 'show']).use(middleware.auth({guards: ['api']}))
 router.post('transactions', [TransactionsController, 'store']).use(middleware.auth({guards: ['api']}))
 router.put('transactions/:id', [TransactionsController, 'update']).use(middleware.auth({guards: ['api']}))

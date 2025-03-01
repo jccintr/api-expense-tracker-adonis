@@ -134,4 +134,74 @@ export default class TransactionsController {
         return response.status(200).send({message:'Resource deleted'})
 
   }
+
+  async search({response,auth,request}: HttpContext) {
+   
+    const user_id = auth.user?.id!;
+    var {minDate,maxDate,description,category,account} = request.qs();
+
+    var finishDate,startDate;
+    const today = new Date(Date.now());
+    const y = today.getFullYear();
+    const m =String(today.getMonth() + 1).padStart(2, '0');
+    const d =  String(today.getDate()).padStart(2, '0');
+
+    if(!description){
+      var description:any = '';
+    }
+    if(!maxDate){
+      const todayStr = y + '-' + m + '-' + d;
+      finishDate = new Date(todayStr + 'T23:59:00.000Z');
+    } else {
+      finishDate = new Date(maxDate + 'T23:59:00.000Z');
+    }
+
+    if(!minDate){
+      startDate = new Date(y+'-01-01'+'T00:00:00.000Z');
+    } else {
+       startDate = new Date(minDate+'T00:00:00.000Z');
+    }
+  var transactions: string | any[] = [];
+   if(!category && !account){
+     transactions = await Transaction.query()
+     .where('user_id', user_id)
+     .whereILike('description', '%'+description+'%')
+     .whereBetween('createdAt',[startDate, finishDate]);
+   } 
+   if(category && account){
+    transactions = await Transaction.query()
+    .where('user_id', user_id)
+    .whereILike('description', '%'+description+'%')
+    .whereBetween('createdAt',[startDate, finishDate])
+    .where('category_id', category)
+    .where('account_id', account);
+   }
+  if(category && !account){
+    transactions = await Transaction.query()
+    .where('user_id', user_id)
+    .whereILike('description', '%'+description+'%')
+    .whereBetween('createdAt',[startDate, finishDate])
+    .where('category_id', category);
+  }
+  if(!category && account){
+    transactions = await Transaction.query()
+    .where('user_id', user_id)
+    .whereILike('description', '%'+description+'%')
+    .whereBetween('createdAt',[startDate, finishDate])
+    .where('account_id', account);
+  }
+
+
+   var trans: Transaction[] = []
+ 
+    for(let i=0;i<transactions.length;i++){
+        const t =  transactions[i]
+        await t.load('account')
+        await t.load('category')
+        trans.push(t);
+    }
+  
+    return response.status(200).send(trans)
+
+  }
 }
