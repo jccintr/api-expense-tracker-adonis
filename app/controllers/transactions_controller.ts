@@ -1,6 +1,7 @@
 import Transaction from '#models/transaction';
 import type { HttpContext } from '@adonisjs/core/http'
 import { createTransactionValidator } from '#validators/transaction';
+import db from '@adonisjs/lucid/services/db'
 
 export default class TransactionsController {
   /**
@@ -204,4 +205,54 @@ export default class TransactionsController {
     return response.status(200).send(trans)
 
   }
+
+  async summaryByDay({response,auth,request}: HttpContext) {
+
+    const user_id = auth.user?.id!;
+    const {days} = request.qs();
+
+    const minusDays = days || 10;
+   
+
+    const query = `SELECT DATE(created_at) AS transaction_date, SUM(amount) AS total_amount
+                  FROM transactions
+                  WHERE created_at >= CURRENT_DATE - INTERVAL '${minusDays} days'
+                  AND user_id = ${user_id}
+                  GROUP BY transaction_date
+                  ORDER BY transaction_date;`;
+
+    const summary = await db.rawQuery(query);
+
+
+    return response.status(200).send(summary.rows)
+
+  }
+
+  async summaryByCategory({response,auth,request}: HttpContext) {
+
+    const user_id = auth.user?.id!;
+    var {month,year} = request.qs();
+   
+    const today = new Date(Date.now());
+    if(!month || month > 12 || month < 1){
+      month = today.getMonth() + 1;
+    }
+
+    if(!year){
+      year =  today.getFullYear();
+    }
+
+    const query = `SELECT name AS category, SUM(amount) AS total_amount
+                   FROM transactions
+                   INNER JOIN categories ON transactions.category_id = categories.id
+                   WHERE EXTRACT(MONTH FROM transactions.created_at) = ${month}
+                   AND EXTRACT(YEAR FROM transactions.created_at) = ${year}
+                   AND transactions.user_id = ${user_id}
+                   GROUP BY name`
+    
+    const summary = await db.rawQuery(query);
+
+    return response.status(200).send(summary.rows)
+  }
 }
+
