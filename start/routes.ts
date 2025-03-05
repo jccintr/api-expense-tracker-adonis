@@ -38,6 +38,7 @@ router.get('transactions', [TransactionsController, 'index']).use(middleware.aut
 router.get('transactions/search', [TransactionsController, 'search']).use(middleware.auth({guards: ['api']}))
 router.get('transactions/summary/day', [TransactionsController, 'summaryByDay']).use(middleware.auth({guards: ['api']}))
 router.get('transactions/summary/category', [TransactionsController, 'summaryByCategory']).use(middleware.auth({guards: ['api']}))
+router.get('transactions/summary/week', [TransactionsController, 'summaryByWeek']).use(middleware.auth({guards: ['api']}))
 router.get('transactions/:id', [TransactionsController, 'show']).use(middleware.auth({guards: ['api']}))
 router.post('transactions', [TransactionsController, 'store']).use(middleware.auth({guards: ['api']}))
 router.put('transactions/:id', [TransactionsController, 'update']).use(middleware.auth({guards: ['api']}))

@@ -228,6 +228,56 @@ export default class TransactionsController {
 
   }
 
+  async summaryByWeek({response,auth,request}: HttpContext) {
+
+    const user_id = auth.user?.id!;
+    let {week_number} = request.qs();
+    
+    let weekRange;
+    if(!week_number){
+      week_number = this.getWeekNumber(new Date());
+    }
+      weekRange = this.getWeekRange(week_number)
+   
+     
+     const firstDay = new Date(weekRange.firstDay+'T00:00:00.000Z');
+     const lastDay = new Date(weekRange.lastDay+'T00:00:00.000Z');
+
+     const query = `SELECT EXTRACT(DOW FROM created_at) AS day_of_week, SUM(amount) AS total_amount
+                    FROM transactions
+                    WHERE created_at BETWEEN '${weekRange.firstDay}' AND '${weekRange.lastDay}'
+                    AND user_id = ${user_id}
+                    GROUP BY day_of_week
+                    ORDER BY day_of_week
+     `;
+
+     const query_ret = await db.rawQuery(query);
+
+     const week = query_ret.rows;
+
+     let fullWeek = [];
+     let total = 0;
+     for(let i=0;i<7;i++){
+         const result = week.find(t => t.day_of_week == i);
+         if(result){
+           total += result.total_amount;
+         }
+         fullWeek.push({
+            day_of_week: i,
+            total_amount: result?result.total_amount:0
+        });
+     }
+   
+     const obj = {
+      week_number,
+      first_day: firstDay,
+      last_day:lastDay,
+      total_amount: total, 
+      week_days: fullWeek
+     }
+     return response.status(200).send(obj)
+  }
+
   async summaryByCategory({response,auth,request}: HttpContext) {
 
     const user_id = auth.user?.id!;
@@ -251,8 +301,55 @@ export default class TransactionsController {
                    GROUP BY name`
     
     const summary = await db.rawQuery(query);
-
-    return response.status(200).send(summary.rows)
+   
+    return response.status(200).send(summary)
   }
+
+   getWeekRange (weekNumber)  {
+    const currentYear = new Date().getFullYear();
+    const firstDayOfYear = new Date(currentYear, 0, 1);
+    const daysOffset = (weekNumber - 1) * 7;
+    const firstDayOfWeek = new Date(firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+    
+    // Ajustar para o início da semana (domingo ou segunda, dependendo da região)
+    const dayOfWeek = firstDayOfWeek.getDay();
+    const firstDay = new Date(firstDayOfWeek);
+    firstDay.setDate(firstDayOfWeek.getDate() - dayOfWeek); // Ajuste para o domingo
+    
+    const lastDay = new Date(firstDay);
+    lastDay.setDate(firstDay.getDate() + 6); // Último dia da semana
+    
+    return {
+        firstDay: firstDay.toISOString().split('T')[0],
+        lastDay: lastDay.toISOString().split('T')[0]
+    };
 }
+
+getWeekNumber(date) {
+  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+  const pastDays = (date - firstDayOfYear) / (24 * 60 * 60 * 1000);
+  return Math.ceil((pastDays + firstDayOfYear.getDay() + 1) / 7);
+}
+
+}
+
+
+  /*
+    // console.log(summary.rows.length)
+     let weekArray = [];
+    for (let d = new Date(firstDay); d <= lastDay; d.setUTCDate(d.getUTCDate() + 1)) {
+      console.log(d.toISOString()+' '+summary.rows[0].transaction_date);
+      
+    //  for(let i=0;i<summary.rows.length;i++){
+         
+    //     if(d.toISOString() == summary.rows[i].transaction_date){
+     //     console.log(d)
+     //    }
+     //  }
+        weekArray.push({
+            transaction_date: d.toISOString().split('T')[0] + "T00:00:00.000Z",
+            total_amount: 0
+        });
+    }
+    */
 
