@@ -11,10 +11,11 @@ export default class TransactionsController {
 
     const user_id = auth.user?.id!;
     const {data} = request.qs();
-
+   
     if(data){
       const minDate = new Date(data+'T00:00:00.000Z');
-      const maxDate = new Date(data+'T23:59:00.000Z');
+      const maxDate = new Date(data+'T23:59:59.000Z');
+     
       var transactions = await Transaction.query().where('user_id', user_id).whereBetween('createdAt',[minDate, maxDate]);
     } else {
       var transactions = await  Transaction.findManyBy({user_id: user_id})
@@ -239,18 +240,28 @@ export default class TransactionsController {
     }
       weekRange = this.getWeekRange(week_number)
    
+     console.log(weekRange);
+     const firstDay = weekRange.firstDay + ' 00:00:00Z';
+     const lastDay = weekRange.lastDay + ' 23:59:59Z';
+     console.log(firstDay)
+     console.log(lastDay)
      
-     const firstDay = new Date(weekRange.firstDay+'T00:00:00.000Z');
-     const lastDay = new Date(weekRange.lastDay+'T00:00:00.000Z');
-
-     const query = `SELECT EXTRACT(DOW FROM created_at) AS day_of_week, SUM(amount) AS total_amount
+     const query = `SELECT EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC') AS day_of_week, SUM(amount) AS total_amount
                     FROM transactions
-                    WHERE created_at BETWEEN '${weekRange.firstDay}' AND '${weekRange.lastDay}'
+                    WHERE (created_at AT TIME ZONE 'UTC') BETWEEN '${firstDay}' AND '${lastDay}'
                     AND user_id = ${user_id}
                     GROUP BY day_of_week
                     ORDER BY day_of_week
      `;
 
+/*
+const query = `SELECT created_at AT TIME ZONE 'UTC',EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC') AS day_of_week,amount
+FROM transactions
+ WHERE (created_at AT TIME ZONE 'UTC') BETWEEN '${firstDay}' AND '${lastDay}'
+AND user_id = ${user_id}
+ORDER BY created_at AT TIME ZONE 'UTC'
+`
+*/
      const query_ret = await db.rawQuery(query);
 
      const week = query_ret.rows;
