@@ -238,13 +238,15 @@ export default class TransactionsController {
     if(!week_number){
       week_number = this.getWeekNumber(new Date());
     }
+    if(week_number<1){
+      week_number = 1;
+    }
       weekRange = this.getWeekRange(week_number)
    
-     console.log(weekRange);
+     
      const firstDay = weekRange.firstDay + ' 00:00:00Z';
      const lastDay = weekRange.lastDay + ' 23:59:59Z';
-     console.log(firstDay)
-     console.log(lastDay)
+   
      
      const query = `SELECT EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC') AS day_of_week, SUM(amount) AS total_amount
                     FROM transactions
@@ -281,8 +283,8 @@ ORDER BY created_at AT TIME ZONE 'UTC'
    
      const obj = {
       week_number,
-      first_day: firstDay,
-      last_day:lastDay,
+      first_day: weekRange.firstDay,
+      last_day: weekRange.lastDay,
       total_amount: total, 
       week_days: fullWeek
      }
@@ -306,14 +308,25 @@ ORDER BY created_at AT TIME ZONE 'UTC'
     const query = `SELECT name AS category, SUM(amount) AS total_amount
                    FROM transactions
                    INNER JOIN categories ON transactions.category_id = categories.id
-                   WHERE EXTRACT(MONTH FROM transactions.created_at) = ${month}
-                   AND EXTRACT(YEAR FROM transactions.created_at) = ${year}
+                   WHERE EXTRACT(MONTH FROM transactions.created_at AT TIME ZONE 'UTC') = ${month}
+                   AND EXTRACT(YEAR FROM transactions.created_at AT TIME ZONE 'UTC') = ${year}
                    AND transactions.user_id = ${user_id}
                    GROUP BY name`
     
     const summary = await db.rawQuery(query);
+    const arrCategories = summary.rows;
+
+    let total = 0;
+    for(let i=0;i<arrCategories.length;i++){
+          total += arrCategories[i].total_amount;
+    }
    
-    return response.status(200).send(summary)
+    const obj = {
+     
+      total_amount: total, 
+      categories: arrCategories
+     }
+     return response.status(200).send(obj)
   }
 
    getWeekRange (weekNumber)  {
