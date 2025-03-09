@@ -168,7 +168,8 @@ export default class TransactionsController {
      transactions = await Transaction.query()
      .where('user_id', user_id)
      .whereILike('description', '%'+description+'%')
-     .whereBetween('createdAt',[startDate, finishDate]);
+     .whereBetween('createdAt',[startDate, finishDate])
+     .orderBy('created_at', 'desc');
    } 
    if(category && account){
     transactions = await Transaction.query()
@@ -176,21 +177,24 @@ export default class TransactionsController {
     .whereILike('description', '%'+description+'%')
     .whereBetween('createdAt',[startDate, finishDate])
     .where('category_id', category)
-    .where('account_id', account);
+    .where('account_id', account)
+    .orderBy('created_at', 'desc');
    }
   if(category && !account){
     transactions = await Transaction.query()
     .where('user_id', user_id)
     .whereILike('description', '%'+description+'%')
     .whereBetween('createdAt',[startDate, finishDate])
-    .where('category_id', category);
+    .where('category_id', category)
+    .orderBy('created_at', 'desc');
   }
   if(!category && account){
     transactions = await Transaction.query()
     .where('user_id', user_id)
     .whereILike('description', '%'+description+'%')
     .whereBetween('createdAt',[startDate, finishDate])
-    .where('account_id', account);
+    .where('account_id', account)
+    .orderBy('created_at', 'desc');
   }
 
 
@@ -256,14 +260,7 @@ export default class TransactionsController {
                     ORDER BY day_of_week
      `;
 
-/*
-const query = `SELECT created_at AT TIME ZONE 'UTC',EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC') AS day_of_week,amount
-FROM transactions
- WHERE (created_at AT TIME ZONE 'UTC') BETWEEN '${firstDay}' AND '${lastDay}'
-AND user_id = ${user_id}
-ORDER BY created_at AT TIME ZONE 'UTC'
-`
-*/
+
      const query_ret = await db.rawQuery(query);
 
      const week = query_ret.rows;
@@ -329,7 +326,49 @@ ORDER BY created_at AT TIME ZONE 'UTC'
      return response.status(200).send(obj)
   }
 
-   getWeekRange (weekNumber)  {
+  async summaryByAccount({response,auth,request}: HttpContext) {
+
+    const user_id = auth.user?.id!;
+    var {month,year} = request.qs();
+   
+    const today = new Date(Date.now());
+    if(!month || month > 12 || month < 1){
+      month = today.getMonth() + 1;
+    }
+
+    if(!year){
+      year =  today.getFullYear();
+    }
+
+    const query = `SELECT name AS account, SUM(amount) AS total_amount
+                   FROM transactions
+                   INNER JOIN accounts ON transactions.account_id = accounts.id
+                   WHERE EXTRACT(MONTH FROM transactions.created_at AT TIME ZONE 'UTC') = ${month}
+                   AND EXTRACT(YEAR FROM transactions.created_at AT TIME ZONE 'UTC') = ${year}
+                   AND transactions.user_id = ${user_id}
+                   GROUP BY name`
+
+    const summary = await db.rawQuery(query);
+    const arrAccounts = summary.rows;
+
+    let total = 0;
+    for(let i=0;i<arrAccounts.length;i++){
+          total += arrAccounts[i].total_amount;
+    }
+  
+    const obj = {
+    
+      total_amount: total, 
+      accounts: arrAccounts
+    }
+    return response.status(200).send(obj)
+
+  }
+
+  
+
+
+   getWeekRange (weekNumber: number)  {
     const currentYear = new Date().getFullYear();
     const firstDayOfYear = new Date(currentYear, 0, 1);
     const daysOffset = (weekNumber - 1) * 7;
