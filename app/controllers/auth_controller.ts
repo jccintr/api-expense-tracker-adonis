@@ -27,7 +27,7 @@ export default class AuthController {
     newUser.password = password;
     await newUser.save()
     
-    const account = await Account.createMany([
+    await Account.createMany([
       {
         name: 'Cash',
         user_id: newUser.id,
@@ -42,7 +42,7 @@ export default class AuthController {
       },
     ])
 
-    const categories = await Category.createMany([
+    await Category.createMany([
       {
         name: 'Alimentação',
         user_id: newUser.id,
