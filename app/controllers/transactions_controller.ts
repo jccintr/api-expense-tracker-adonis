@@ -428,9 +428,9 @@ export default class TransactionsController {
     };
 }
 
-getWeekNumber(date) {
+getWeekNumber(date: Date) : number {
   const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-  const pastDays = (date - firstDayOfYear) / (24 * 60 * 60 * 1000);
+  const pastDays = (date.getTime() - firstDayOfYear.getTime()) / (24 * 60 * 60 * 1000);
   return Math.ceil((pastDays + firstDayOfYear.getDay() + 1) / 7);
 }
 
