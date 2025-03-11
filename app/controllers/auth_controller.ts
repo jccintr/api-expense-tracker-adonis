@@ -2,6 +2,8 @@ import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
 import hash from '@adonisjs/core/services/hash'
 import { registerValidator, loginValidator } from '#validators/auth';
+import Account from '#models/account';
+import Category from '#models/category';
 
 export default class AuthController {
   
@@ -24,6 +26,36 @@ export default class AuthController {
     newUser.email = email;
     newUser.password = password;
     await newUser.save()
+    
+    const account = await Account.createMany([
+      {
+        name: 'Cash',
+        user_id: newUser.id,
+      },
+      {
+        name: 'PicPay',
+        user_id: newUser.id,
+      },
+      {
+        name: 'Nubank',
+        user_id: newUser.id,
+      },
+    ])
+
+    const categories = await Category.createMany([
+      {
+        name: 'Alimentação',
+        user_id: newUser.id,
+      },
+      {
+        name: 'Mat. Higiêne',
+        user_id: newUser.id,
+      },
+      {
+        name: 'Mat. Limpeza',
+        user_id: newUser.id,
+      },
+    ])
     
 
     response.status(201).send(newUser)

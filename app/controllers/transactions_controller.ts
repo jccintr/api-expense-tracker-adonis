@@ -2,7 +2,7 @@ import Transaction from '#models/transaction';
 import type { HttpContext } from '@adonisjs/core/http'
 import { createTransactionValidator } from '#validators/transaction';
 import db from '@adonisjs/lucid/services/db'
-import { DateTime } from 'luxon';
+
 
 export default class TransactionsController {
   /**
@@ -308,7 +308,7 @@ export default class TransactionsController {
      let fullWeek = [];
      let total = 0;
      for(let i=0;i<7;i++){
-         const result = week.find(t => t.day_of_week == i);
+         const result = week.find((t: { day_of_week: number; }) => t.day_of_week == i);
          if(result){
            total += result.total_amount;
          }

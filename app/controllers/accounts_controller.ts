@@ -34,7 +34,7 @@ export default class AccountsController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({  }: HttpContext) {}
 
   /**
    * Handle form submission for the edit action
