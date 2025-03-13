@@ -288,13 +288,12 @@ export default class TransactionsController {
       weekRange = this.getWeekRange(week_number)
    
      
-     const firstDay = weekRange.firstDay + ' 00:00:00Z';
-     const lastDay = weekRange.lastDay + ' 23:59:59Z';
-   
-     
-     const query = `SELECT EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC') AS day_of_week, SUM(amount) AS total_amount
+     const firstDay = weekRange.firstDay + ' 00:00:00.000';
+     const lastDay = weekRange.lastDay + ' 23:59:59.000';
+    
+     const query = `SELECT EXTRACT(DOW FROM created_at AT TIME ZONE 'America/Sao_Paulo') AS day_of_week, SUM(amount) AS total_amount
                     FROM transactions
-                    WHERE (created_at AT TIME ZONE 'UTC') BETWEEN '${firstDay}' AND '${lastDay}'
+                    WHERE (created_at AT TIME ZONE 'America/Sao_Paulo') BETWEEN '${firstDay}' AND '${lastDay}'
                     AND user_id = ${user_id}
                     GROUP BY day_of_week
                     ORDER BY day_of_week
