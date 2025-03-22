@@ -17,7 +17,7 @@ export default class TransactionsController {
       const minDate = data + ' 00:00:00.000';
       const maxDate = data + ' 23:59:59.000';
       const query = `SELECT id  FROM transactions
-                     WHERE (created_at  AT TIME ZONE 'America/Sao_Paulo') BETWEEN '${minDate}' AND '${maxDate}'
+                     WHERE (created_at AT TIME ZONE 'America/Sao_Paulo') BETWEEN '${minDate}' AND '${maxDate}'
                      AND user_id = ${user_id}
       `
       const results = await db.rawQuery(query);
@@ -27,9 +27,10 @@ export default class TransactionsController {
          ids.push(rows[i].id);
       }
     
-     transactions = await Transaction.query().whereIn('id', ids);
+     transactions = await Transaction.query().whereIn('id', ids).orderBy('createdAt','asc');
     } else {
-      transactions = await  Transaction.findManyBy({user_id: user_id})
+     // transactions = await  Transaction.findManyBy({user_id: user_id})
+       transactions = await Transaction.query().where('user_id', user_id).orderBy('createdAt', 'asc');
     }
  
    
@@ -46,34 +47,6 @@ export default class TransactionsController {
 
   }
 
-  async index2({response,auth,request}: HttpContext) {
-
-    const user_id = auth.user?.id!;
-    const {data} = request.qs();
-   
-    if(data){
-      const minDate = new Date(data+'T00:00:00.000Z');
-      const maxDate = new Date(data+'T23:59:59.000Z');
-     
-      var transactions = await Transaction.query().where('user_id', user_id).whereBetween('createdAt',[minDate, maxDate]);
-      
-    } else {
-      var transactions = await  Transaction.findManyBy({user_id: user_id})
-    }
- 
-   
-    var trans: Transaction[] = []
- 
-    for(let i=0;i<transactions.length;i++){
-        const t =  transactions[i]
-        await t.load('account')
-        await t.load('category')
-        trans.push(t);
-    }
-  
-    return response.status(200).send(trans)
-
-  }
 
   /**
    * Handle form submission for the create action

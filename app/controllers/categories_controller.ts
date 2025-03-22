@@ -8,8 +8,9 @@ export default class CategoriesController {
    */
   async index({response,auth}: HttpContext) {
  
-     const user_id = auth.user?.id;
-     const categories = await  Category.findManyBy('user_id', user_id)
+     const user_id = auth.user!.id;
+      //const categories = await  Category.findManyBy('user_id', user_id)
+      const categories = await Category.query().where('user_id', user_id).orderBy('name', 'asc');
      return response.status(200).send(categories)
  
    }

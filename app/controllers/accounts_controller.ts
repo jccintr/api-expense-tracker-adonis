@@ -9,8 +9,9 @@ export default class AccountsController {
    */
   async index({response,auth}: HttpContext) {
 
-    const user_id = auth.user?.id;
-    const accounts = await  Account.findManyBy('user_id', user_id)
+    const  user_id = auth.user!.id;
+   // const accounts = await  Account.findManyBy('user_id', user_id).orderBy('name', 'desc');
+    const accounts = await Account.query().where('user_id', user_id).orderBy('name', 'asc');
     return response.status(200).send(accounts)
 
   }
