@@ -317,8 +317,8 @@ export default class TransactionsController {
     const query = `SELECT name AS category, SUM(amount) AS total_amount
                    FROM transactions
                    INNER JOIN categories ON transactions.category_id = categories.id
-                   WHERE EXTRACT(MONTH FROM transactions.created_at AT TIME ZONE 'UTC') = ${month}
-                   AND EXTRACT(YEAR FROM transactions.created_at AT TIME ZONE 'UTC') = ${year}
+                   WHERE EXTRACT(MONTH FROM transactions.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') = ${month}
+                   AND EXTRACT(YEAR FROM transactions.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') = ${year}
                    AND transactions.user_id = ${user_id}
                    GROUP BY name`
     
@@ -355,8 +355,8 @@ export default class TransactionsController {
     const query = `SELECT name AS account, SUM(amount) AS total_amount
                    FROM transactions
                    INNER JOIN accounts ON transactions.account_id = accounts.id
-                   WHERE EXTRACT(MONTH FROM transactions.created_at AT TIME ZONE 'UTC') = ${month}
-                   AND EXTRACT(YEAR FROM transactions.created_at AT TIME ZONE 'UTC') = ${year}
+                   WHERE EXTRACT(MONTH FROM transactions.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') = ${month}
+                   AND EXTRACT(YEAR FROM transactions.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo') = ${year}
                    AND transactions.user_id = ${user_id}
                    GROUP BY name`
 
