@@ -4,7 +4,10 @@ import { createAccountValidator } from '#validators/account'
 import { AccountService } from '#services/account_service'
 
 export default class AccountsController {
-  constructor(protected service: AccountService) {}
+  private service: AccountService
+  constructor(service: AccountService) {
+    this.service = service
+  }
 
   async index({ response, auth }: HttpContext) {
     // eslint-disable-next-line @typescript-eslint/naming-convention
