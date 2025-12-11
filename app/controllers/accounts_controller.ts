@@ -1,19 +1,17 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Account from '#models/account'
-import { createAccountValidator } from '#validators/account';
-
+import { createAccountValidator } from '#validators/account'
+import { AccountService } from '#services/account_service'
 
 export default class AccountsController {
-  /**
-   * Display a list of resource
-   */
-  async index({response,auth}: HttpContext) {
+  constructor(protected service: AccountService) {}
 
-    const  user_id = auth.user!.id;
-   // const accounts = await  Account.findManyBy('user_id', user_id).orderBy('name', 'desc');
-    const accounts = await Account.query().where('user_id', user_id).orderBy('name', 'asc');
+  async index({ response, auth }: HttpContext) {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+   // const user_id = auth.user!.id
+  //  const accounts = await Account.query().where('user_id', user_id).orderBy('name', 'asc')
+    const accounts = await this.service.findAllByUser(auth.user!.id)
     return response.status(200).send(accounts)
-
   }
 
   /**
@@ -35,35 +33,33 @@ export default class AccountsController {
   /**
    * Show individual record
    */
-  async show({  }: HttpContext) {}
+  async show({}: HttpContext) {}
 
   /**
    * Handle form submission for the edit action
    */
   async update({ params, request, response, auth }: HttpContext) {
-
     const data = request.all()
     await createAccountValidator.validate(data)
-    const {name} = request.body()
+    const { name } = request.body()
     const id = params.id
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     const user_id = auth.user?.id;
 
    
    
     const account = await Account.find(id)
-    if(!account){
-      return response.status(404).send({error: 'Resource not found'})
+    if (!account) {
+      return response.status(404).send({ error: 'Resource not found' })
     }
 
-    if(account.user_id != user_id){
-      return response.status(403).send({error: 'Access denied'})
+    if (account.user_id != user_id) {
+      return response.status(403).send({ error: 'Access denied' })
     }
     
     account.name = name
     await account.save()
     return response.status(200).send(account)
-   
-
   }
 
   /**
@@ -76,21 +72,19 @@ export default class AccountsController {
 
      
     const account = await Account.find(id)
-    if(!account){
-      return response.status(404).send({error: 'Resource not found'})
+    if (!account) {
+      return response.status(404).send({ error: 'Resource not found' })
     }
 
-    if(account.user_id != user_id){
-      return response.status(403).send({error: 'Access denied'})
+    if (account.user_id != user_id) {
+      return response.status(403).send({ error: 'Access denied' })
     }
     
     try {
       
       await account.delete()
-      return response.status(200).send({message:'Resource deleted'})
-
+      return response.status(200).send({ message: 'Resource deleted' })
     } catch (error) {
-
       return response.status(409).send({error:'Cannot delete this resource because it is being referenced in another table.'})
     }
    
