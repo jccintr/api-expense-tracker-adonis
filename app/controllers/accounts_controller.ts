@@ -2,12 +2,11 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Account from '#models/account'
 import { createAccountValidator } from '#validators/account'
 import { AccountService } from '#services/account_service'
+import { inject } from '@adonisjs/core'
 
+@inject()
 export default class AccountsController {
-  private service: AccountService
-  constructor(service: AccountService) {
-    this.service = service
-  }
+  constructor(protected service: AccountService) {}
 
   async index({ response, auth }: HttpContext) {
     // eslint-disable-next-line @typescript-eslint/naming-convention
