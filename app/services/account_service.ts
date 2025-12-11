@@ -1,7 +1,7 @@
 import { inject } from '@adonisjs/core'
 import Account from '#models/account'
 
-
+@inject()
 export class AccountService {
   // Your code here
   async findAllByUser(userId: number) {
