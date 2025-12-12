@@ -1,10 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import Account from '#models/account'
 import { createAccountValidator } from '#validators/account'
 import { AccountService } from '#services/account_service'
 import { inject } from '@adonisjs/core'
-import ResourceNotFoundException from '#exceptions/resource_not_found_exception'
-import ForbidenException from '#exceptions/forbiden_exception'
 
 @inject()
 export default class AccountsController {
@@ -31,7 +28,7 @@ export default class AccountsController {
     const { name } = request.body()
     const id = params.id
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const userId = auth.user?.id
+    const userId = auth.user!.id
     const account = await this.service.update(+id, { name }, userId)
     return response.status(200).send(account)
   }
@@ -39,9 +36,9 @@ export default class AccountsController {
   async destroy({ params, response, auth }: HttpContext) {
     const id = params.id
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const userId = auth.user?.id
+    const userId = auth.user!.id
 
-    const ret = await this.service.delete(id,userId)
+    const ret = await this.service.delete(id, userId)
     return response.status(200).send(ret)
   }
 }
