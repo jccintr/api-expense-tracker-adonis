@@ -246,7 +246,6 @@ export default class TransactionsController {
 
   }
 
-  /*
   async summaryByWeek({response,auth,request}: HttpContext) {
 
     const user_id = auth.user?.id!;
@@ -280,12 +279,18 @@ export default class TransactionsController {
 
      let fullWeek = [];
      let total = 0;
+     const startDate = new Date(weekRange.firstDay);
      for(let i=0;i<7;i++){
+         const currentDate = new Date(startDate);
+         currentDate.setDate(startDate.getDate() + i);
+         const dateStr = currentDate.toISOString().split('T')[0];
+
          const result = week.find((t: { day_of_week: number; }) => t.day_of_week == i);
          if(result){
            total += result.total_amount;
          }
          fullWeek.push({
+            date: dateStr,
             day_of_week: i,
             total_amount: result?result.total_amount:0
         });
@@ -300,73 +305,7 @@ export default class TransactionsController {
      }
      return response.status(200).send(obj)
   }
-*/
 
-async summaryByWeek({ response, auth, request }: HttpContext) {
-    const user_id = auth.user?.id!;
-    let { week_number } = request.qs();
-   
-    let weekRange;
-    if (!week_number) {
-        week_number = this.getWeekNumber(new Date());
-    }
-    if (week_number < 1) {
-        week_number = 1;
-    }
-    
-    weekRange = this.getWeekRange(week_number);
-    
-    const firstDay = weekRange.firstDay + ' 00:00:00.000';
-    const lastDay = weekRange.lastDay + ' 23:59:59.000';
-   
-    const query = `
-        SELECT 
-            EXTRACT(DOW FROM created_at AT TIME ZONE 'America/Sao_Paulo') AS day_of_week, 
-            SUM(amount) AS total_amount
-        FROM transactions
-        WHERE (created_at AT TIME ZONE 'America/Sao_Paulo') BETWEEN '${firstDay}' AND '${lastDay}'
-          AND user_id = ${user_id}
-        GROUP BY day_of_week
-        ORDER BY day_of_week
-    `;
-
-    const query_ret = await db.rawQuery(query);
-    const week = query_ret.rows;
-
-    // Monta a semana completa com a data real de cada dia
-    let fullWeek: any[] = [];
-    let total = 0;
-
-    const startDate = new Date(weekRange.firstDay);
-
-    for (let i = 0; i < 7; i++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + i);
-
-        // Formata como YYYY-MM-DD
-        const dateStr = currentDate.toISOString().split('T')[0];
-
-        const result = week.find((t: { day_of_week: number }) => t.day_of_week === i);
-
-        const amount = result ? Number(result.total_amount) : 0;
-        total += amount;
-
-        fullWeek.push({
-            date: dateStr,
-            day_of_week: i,
-            total_amount: amount
-        });
-    }
-
-    // Aqui você pode retornar a resposta como preferir
-    return response.json({
-        week_number,
-        week: fullWeek,
-        total_amount: total,
-        first_day: weekRange.firstDay,
-        last_day: weekRange.lastDay
-    });
-}
   async summaryByCategory({response,auth,request}: HttpContext) {
 
     const user_id = auth.user?.id!;
