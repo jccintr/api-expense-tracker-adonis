@@ -246,67 +246,7 @@ export default class TransactionsController {
 
   }
 
-  async summaryByWeek({response,auth,request}: HttpContext) {
-
-    const user_id = auth.user?.id!;
-    let {week_number} = request.qs();
-    
-    let weekRange;
-    if(!week_number){
-      week_number = this.getWeekNumber(new Date());
-    }
-    if(week_number<1){
-      week_number = 1;
-    }
-      weekRange = this.getWeekRange(week_number)
-   
-     
-     const firstDay = weekRange.firstDay + ' 00:00:00.000';
-     const lastDay = weekRange.lastDay + ' 23:59:59.000';
-    
-     const query = `SELECT EXTRACT(DOW FROM created_at AT TIME ZONE 'America/Sao_Paulo') AS day_of_week, SUM(amount) AS total_amount
-                    FROM transactions
-                    WHERE (created_at AT TIME ZONE 'America/Sao_Paulo') BETWEEN '${firstDay}' AND '${lastDay}'
-                    AND user_id = ${user_id}
-                    GROUP BY day_of_week
-                    ORDER BY day_of_week
-     `;
-
-
-     const query_ret = await db.rawQuery(query);
-
-     const week = query_ret.rows;
-
-     let fullWeek = [];
-     let total = 0;
-     const startDate = new Date(weekRange.firstDay);
-     for(let i=0;i<7;i++){
-         const currentDate = new Date(startDate);
-         currentDate.setDate(startDate.getDate() + i);
-         const dateStr = currentDate.toISOString().split('T')[0];
-
-         const result = week.find((t: { day_of_week: number; }) => t.day_of_week == i);
-         if(result){
-           total += result.total_amount;
-         }
-         fullWeek.push({
-            date: dateStr,
-            day_of_week: i,
-            total_amount: result?result.total_amount:0
-        });
-     }
-   
-     const obj = {
-      week_number,
-      first_day: weekRange.firstDay,
-      last_day: weekRange.lastDay,
-      total_amount: total, 
-      week_days: fullWeek
-     }
-     return response.status(200).send(obj)
-  }
-
-  async summaryByCategory({response,auth,request}: HttpContext) {
+   async summaryByCategory({response,auth,request}: HttpContext) {
 
     const user_id = auth.user?.id!;
     var {month,year} = request.qs();
@@ -383,33 +323,115 @@ export default class TransactionsController {
 
   }
 
+  async summaryByWeek({ response, auth, request }: HttpContext) {
+  const user_id = auth.user?.id!
+  let { week_number } = request.qs()
+
+  if (!week_number) {
+    week_number = this.getWeekNumber(new Date())
+  }
+  week_number = Number(week_number)
+  if (week_number < 1) {
+    week_number = 1
+  }
+
+  const weekRange = this.getWeekRange(week_number)
+  const firstDay = weekRange.firstDay + ' 00:00:00'
+  const lastDay = weekRange.lastDay + ' 23:59:59'
+
+  // DOW do Postgres: 0=dom, 1=seg, ..., 6=sáb
+  const query = `
+    SELECT
+      EXTRACT(DOW FROM created_at AT TIME ZONE 'America/Sao_Paulo')::int AS day_of_week,
+      SUM(amount) AS total_amount
+    FROM transactions
+    WHERE (created_at AT TIME ZONE 'America/Sao_Paulo') BETWEEN ? AND ?
+      AND user_id = ?
+    GROUP BY day_of_week
+    ORDER BY day_of_week
+  `
+
+  const query_ret = await db.rawQuery(query, [firstDay, lastDay, user_id])
+  const week = query_ret.rows
+
+  // Converte índice da semana (0=seg ... 6=dom) → DOW do Postgres
+  // i: 0 1 2 3 4 5 6
+  // PG: 1 2 3 4 5 6 0
+  const indexToPgDow = (i: number) => (i === 6 ? 0 : i + 1)
+
+  let fullWeek = []
+  let total = 0
+  const startDate = new Date(weekRange.firstDay + 'T12:00:00') // meio-dia evita bug de fuso
+
+  for (let i = 0; i < 7; i++) {
+    const currentDate = new Date(startDate)
+    currentDate.setDate(startDate.getDate() + i)
+
+    const y = currentDate.getFullYear()
+    const m = String(currentDate.getMonth() + 1).padStart(2, '0')
+    const d = String(currentDate.getDate()).padStart(2, '0')
+    const dateStr = `${y}-${m}-${d}`
+
+    const pgDow = indexToPgDow(i)
+    const result = week.find((t: { day_of_week: number }) => Number(t.day_of_week) === pgDow)
+
+    if (result) {
+      total += Number(result.total_amount)
+    }
+
+    fullWeek.push({
+      date: dateStr,
+      day_of_week: i, // 0=segunda ... 6=domingo (sua semana)
+      pg_day_of_week: pgDow, // opcional, útil para debug
+      total_amount: result ? Number(result.total_amount) : 0,
+    })
+  }
+
+  return response.status(200).send({
+    week_number,
+    first_day: weekRange.firstDay,
+    last_day: weekRange.lastDay,
+    total_amount: total,
+    week_days: fullWeek,
+  })
+}
+
   
 
 
-   getWeekRange(weekNumber: number) {
-  const currentYear = new Date().getFullYear();
-  const firstDayOfYear = new Date(currentYear, 0, 1);
-  const daysOffset = (weekNumber - 1) * 7;
-  const firstDayOfWeek = new Date(firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+  getWeekRange(weekNumber: number) {
+  const currentYear = new Date().getFullYear()
+  const firstDayOfYear = new Date(currentYear, 0, 1)
+  const daysOffset = (weekNumber - 1) * 7
+  const refDate = new Date(firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000)
 
-  // getDay(): 0 = domingo, 1 = segunda, ..., 6 = sábado
-  const dayOfWeek = firstDayOfWeek.getDay();
+  // 0 = domingo, 1 = segunda, ..., 6 = sábado
+  const dayOfWeek = refDate.getDay()
+  // Volta até a segunda-feira
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1
 
-  // Quantos dias voltar para chegar na segunda-feira
-  // Se for domingo (0), volta 6 dias; senão volta (dayOfWeek - 1)
-  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const firstDay = new Date(refDate)
+  firstDay.setDate(refDate.getDate() - mondayOffset)
+  firstDay.setHours(0, 0, 0, 0)
 
-  const firstDay = new Date(firstDayOfWeek);
-  firstDay.setDate(firstDayOfWeek.getDate() - mondayOffset);
+  const lastDay = new Date(firstDay)
+  lastDay.setDate(firstDay.getDate() + 6) // domingo
+  lastDay.setHours(23, 59, 59, 999)
 
-  const lastDay = new Date(firstDay);
-  lastDay.setDate(firstDay.getDate() + 6); // domingo
+  // Evita deslocamento por fuso no toISOString
+  const toDateStr = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
 
   return {
-    firstDay: firstDay.toISOString().split('T')[0],
-    lastDay: lastDay.toISOString().split('T')[0],
-  };
+    firstDay: toDateStr(firstDay),
+    lastDay: toDateStr(lastDay),
+  }
 }
+
 
 getWeekNumber(date: Date) : number {
   const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
