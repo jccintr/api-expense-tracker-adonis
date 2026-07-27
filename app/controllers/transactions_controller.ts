@@ -386,24 +386,29 @@ export default class TransactionsController {
   
 
 
-   getWeekRange (weekNumber: number)  {
-    const currentYear = new Date().getFullYear();
-    const firstDayOfYear = new Date(currentYear, 0, 1);
-    const daysOffset = (weekNumber - 1) * 7;
-    const firstDayOfWeek = new Date(firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000);
-    
-    // Ajustar para o início da semana (domingo ou segunda, dependendo da região)
-    const dayOfWeek = firstDayOfWeek.getDay();
-    const firstDay = new Date(firstDayOfWeek);
-    firstDay.setDate(firstDayOfWeek.getDate() - dayOfWeek); // Ajuste para o domingo
-    
-    const lastDay = new Date(firstDay);
-    lastDay.setDate(firstDay.getDate() + 6); // Último dia da semana
-    
-    return {
-        firstDay: firstDay.toISOString().split('T')[0],
-        lastDay: lastDay.toISOString().split('T')[0]
-    };
+   getWeekRange(weekNumber: number) {
+  const currentYear = new Date().getFullYear();
+  const firstDayOfYear = new Date(currentYear, 0, 1);
+  const daysOffset = (weekNumber - 1) * 7;
+  const firstDayOfWeek = new Date(firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+
+  // getDay(): 0 = domingo, 1 = segunda, ..., 6 = sábado
+  const dayOfWeek = firstDayOfWeek.getDay();
+
+  // Quantos dias voltar para chegar na segunda-feira
+  // Se for domingo (0), volta 6 dias; senão volta (dayOfWeek - 1)
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+  const firstDay = new Date(firstDayOfWeek);
+  firstDay.setDate(firstDayOfWeek.getDate() - mondayOffset);
+
+  const lastDay = new Date(firstDay);
+  lastDay.setDate(firstDay.getDate() + 6); // domingo
+
+  return {
+    firstDay: firstDay.toISOString().split('T')[0],
+    lastDay: lastDay.toISOString().split('T')[0],
+  };
 }
 
 getWeekNumber(date: Date) : number {
